@@ -31,7 +31,7 @@ jobs:
       # must cd into each project dir so hyperframes finds index.html in CWD
       - run: cd compositions/skills-ticker && hyperframes render --fps 30 --output ../../assets/skills-ticker.mp4
 
-      - run: cd compositions/terminal && hyperframes render --fps 30 --output ../../assets/terminal.mp4
+      - run: cd compositions/terminal && hyperframes render --fps 60 --output ../../assets/terminal.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
@@ -41,7 +41,7 @@ jobs:
 
       - run: >
           ffmpeg -i assets/terminal.mp4
-          -vf "fps=20,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+          -vf "fps=30,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
           -loop 0 assets/terminal.gif
 
       # clean up intermediary MP4s
