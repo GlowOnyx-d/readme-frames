@@ -20,9 +20,30 @@ jobs:
         with:
           node-version: '22'
 
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # cache apt packages (ffmpeg) across runs
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ffmpeg
+          version: 1.0
 
-      - run: npm install -g hyperframes
+      # cache hyperframes global install
+      - name: Cache hyperframes
+        id: cache-hyperframes
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm-global
+          key: hyperframes-${{ runner.os }}-${{ hashFiles('**/render-readme.yml') }}
+
+      - name: Set npm global path
+        run: |
+          mkdir -p ~/.npm-global
+          npm config set prefix ~/.npm-global
+          echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+
+      - name: Install hyperframes
+        if: steps.cache-hyperframes.outputs.cache-hit != 'true'
+        run: npm install -g hyperframes
 
       # config.js must sit next to each index.html so Chrome can load it
       - run: cp config.js compositions/skills-ticker/config.js && cp config.js compositions/terminal/config.js
@@ -34,7 +55,6 @@ jobs:
       - run: cd compositions/terminal && hyperframes render --fps 60 --output ../../assets/terminal.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
-      # two-pass palette approach gives best colour quality at target fps
       - run: >
           ffmpeg -i assets/skills-ticker.mp4
           -vf "fps=30,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
@@ -54,4 +74,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add assets/
           git commit -m "chore: re-render README animations" || echo "nothing to commit"
-          git push || echo "nothing to push"
+          git pull --rebase
+          git push
