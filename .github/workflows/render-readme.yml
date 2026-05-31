@@ -1,10 +1,12 @@
 name: Render README animations
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'compositions/**'
       - 'config.js'
+      - '.github/workflows/render-readme.yml'
 
 jobs:
   render:
