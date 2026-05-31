@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'compositions/**'
-      - 'skills.json'
+      - 'config.js'
 
 jobs:
   render:
@@ -20,11 +20,27 @@ jobs:
 
       - run: npm install -g hyperframes
 
+      # config.js must sit next to the HTML files so Chrome can load it
       - run: cp config.js compositions/config.js
 
-      - run: hyperframes render --input compositions/skills-ticker.html --format gif --fps 30 --output assets/skills-ticker.gif
+      # render to MP4 first (hyperframes doesn't support gif directly)
+      - run: hyperframes render -c compositions/skills-ticker.html --fps 30 --output assets/skills-ticker.mp4
 
-      - run: hyperframes render --input compositions/terminal.html --format gif --fps 30 --output assets/terminal.gif
+      - run: hyperframes render -c compositions/terminal.html --fps 30 --output assets/terminal.mp4
+
+      # convert MP4 → optimised GIF with ffmpeg
+      - run: >
+          ffmpeg -i assets/skills-ticker.mp4
+          -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+          -loop 0 assets/skills-ticker.gif
+
+      - run: >
+          ffmpeg -i assets/terminal.mp4
+          -vf "fps=20,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+          -loop 0 assets/terminal.gif
+
+      # clean up intermediary MP4s
+      - run: rm assets/skills-ticker.mp4 assets/terminal.mp4
 
       - name: Commit rendered GIFs
         run: |
