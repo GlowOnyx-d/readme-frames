@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #stage {
+      width: 800px;
+      height: 320px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #30363d;
+    }
+
+    .titlebar {
+      background: #3a3a3a;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red   { background: #ff5f57; }
+    .dot-amber { background: #ffbd2e; }
+    .dot-green { background: #28c941; }
+
+    .titlebar-label {
+      flex: 1;
+      text-align: center;
+      color: #8b949e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+      font-size: 12px;
+      margin-right: 36px;
+    }
+
+    .body {
+      flex: 1;
+      background: #0d1117;
+      padding: 16px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    .line { display: flex; align-items: flex-start; }
+
+    .prompt { color: #7ee787; margin-right: 8px; flex-shrink: 0; }
+
+    .text-cmd     { color: #e6edf3; }
+    .text-out     { color: #e6edf3; }
+    .text-success { color: #7ee787; }
+    .text-error   { color: #f78166; }
+    .text-info    { color: #79c0ff; }
+
+    #cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: #7ee787;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage"
+    data-composition-id="terminal"
+    data-start="0"
+    data-width="800"
+    data-height="320">
+
+    <div class="titlebar">
+      <span class="dot dot-red"></span>
+      <span class="dot dot-amber"></span>
+      <span class="dot dot-green"></span>
+      <span class="titlebar-label" id="titlebar-label">bash</span>
+    </div>
+
+    <div class="body" id="output"></div>
+  </div>
+
+  <script src="../config.js"></script>
+  <script>
+
+    const PROMPT = `${CONFIG.username}@${CONFIG.hostname} ~ $ `;
+    const SPEED  = CONFIG.typingSpeed;
+    const PAUSE  = CONFIG.pauseAfterLine;
+
+    document.getElementById('titlebar-label').textContent =
+      `${CONFIG.username}@${CONFIG.hostname}`;
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    (async () => {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      function newPromptRow() {
+        const row = document.createElement('div');
+        row.className = 'line';
+        const p = document.createElement('span');
+        p.className = 'prompt';
+        p.textContent = PROMPT;
+        row.appendChild(p);
+        const t = document.createElement('span');
+        t.className = 'text-cmd';
+        row.appendChild(t);
+        output.appendChild(row);
+        return t;
+      }
+
+      const cursor = document.createElement('span');
+      cursor.id = 'cursor';
+
+      let textEl = newPromptRow();
+      textEl.appendChild(cursor);
+
+      for (let i = 0; i < CONFIG.lines.length; i++) {
+        const { type, text } = CONFIG.lines[i];
+
+        if (type === 'cmd') {
+          if (i > 0) {
+            cursor.remove();
+            textEl = newPromptRow();
+            textEl.appendChild(cursor);
+            await sleep(PAUSE);
+          }
+          for (const ch of text) {
+            cursor.remove();
+            textEl.textContent += ch;
+            textEl.appendChild(cursor);
+            await sleep(SPEED);
+          }
+          await sleep(PAUSE);
+          cursor.remove();
+        } else {
+          const outRow = document.createElement('div');
+          outRow.className = 'line';
+          const outSpan = document.createElement('span');
+          outSpan.className = `text-${type}`;
+          outRow.appendChild(outSpan);
+          output.appendChild(outRow);
+
+          for (const ch of text) {
+            outSpan.textContent += ch;
+            await sleep(SPEED * 0.4);
+          }
+          await sleep(PAUSE);
+        }
+      }
+
+      textEl = newPromptRow();
+      textEl.appendChild(cursor);
+    })();
+  </script>
+</body>
+</html>

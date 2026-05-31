@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      overflow: hidden;
+    }
+
+    #stage {
+      width: 1920px;
+      height: 120px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .hf-track {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      padding: 0 24px;
+      white-space: nowrap;
+    }
+
+    .icon-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .icon-wrap img {
+      width: 40px;
+      height: 40px;
+      filter: invert(1);
+      opacity: 0.85;
+    }
+
+    .icon-wrap span {
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage"
+    data-composition-id="skills-ticker"
+    data-start="0"
+    data-width="1920"
+    data-height="120">
+
+    <div class="hf-track" id="track"></div>
+  </div>
+
+  <script src="../config.js"></script>
+  <script>
+
+    const CDN   = 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons';
+    const track = document.getElementById('track');
+
+    // inject scroll duration from config
+    track.style.animation = `scroll ${CONFIG.scrollDuration}s linear infinite`;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes scroll {
+        from { transform: translateX(0); }
+        to   { transform: translateX(-50%); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // double the list for a seamless loop
+    [...CONFIG.icons, ...CONFIG.icons].forEach(({ slug, label }) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'icon-wrap';
+      wrap.innerHTML = `
+        <img src="${CDN}/${slug}.svg" alt="${label}" loading="eager" />
+        <span>${label}</span>
+      `;
+      track.appendChild(wrap);
+    });
+  </script>
+</body>
+</html>

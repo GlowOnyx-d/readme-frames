@@ -1,0 +1,33 @@
+name: Render README animations
+
+on:
+  push:
+    paths:
+      - 'compositions/**'
+      - 'skills.json'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - run: npm install -g hyperframes
+
+      - run: hyperframes render --input compositions/skills-ticker.html --format gif --fps 30 --output assets/skills-ticker.gif
+
+      - run: hyperframes render --input compositions/terminal.html --format gif --fps 30 --output assets/terminal.gif
+
+      - name: Commit rendered GIFs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/
+          git diff --staged --quiet || git commit -m "chore: re-render README animations"
+          git push
