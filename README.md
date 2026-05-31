@@ -1,3 +1,5 @@
+<img src="./assets/icon.svg" width="64" alt="readme-frames icon" />
+
 # readme-frames
 
 Animated GIFs for GitHub profile READMEs, rendered with [HyperFrames](https://github.com/heygen-com/hyperframes).
