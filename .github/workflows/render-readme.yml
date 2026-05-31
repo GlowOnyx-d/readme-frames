@@ -26,9 +26,10 @@ jobs:
       - run: cp config.js compositions/skills-ticker/config.js && cp config.js compositions/terminal/config.js
 
       # render to MP4 first (hyperframes doesn't support gif directly)
-      - run: hyperframes render -c compositions/skills-ticker/index.html --fps 30 --output assets/skills-ticker.mp4
+      # must cd into each project dir so hyperframes finds index.html in CWD
+      - run: cd compositions/skills-ticker && hyperframes render --fps 30 --output ../../assets/skills-ticker.mp4
 
-      - run: hyperframes render -c compositions/terminal/index.html --fps 30 --output assets/terminal.mp4
+      - run: cd compositions/terminal && hyperframes render --fps 30 --output ../../assets/terminal.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
