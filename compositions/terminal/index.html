@@ -42,7 +42,7 @@
       flex: 1;
       text-align: center;
       color: #8b949e;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+      font-family: ui-monospace, 'SF Mono', monospace;
       font-size: 12px;
       margin-right: 36px;
     }
@@ -51,13 +51,13 @@
       flex: 1;
       background: #0d1117;
       padding: 16px;
-      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-family: ui-monospace, 'SF Mono', 'Fira Code', monospace;
       font-size: 13px;
       line-height: 1.6;
       overflow: hidden;
     }
 
-    .line { display: flex; align-items: flex-start; }
+    .line { display: flex; }
 
     .prompt { color: #7ee787; margin-right: 8px; flex-shrink: 0; }
 
@@ -66,20 +66,6 @@
     .text-success { color: #7ee787; }
     .text-error   { color: #f78166; }
     .text-info    { color: #79c0ff; }
-
-    #cursor {
-      display: inline-block;
-      width: 8px;
-      height: 14px;
-      background: #7ee787;
-      vertical-align: text-bottom;
-      animation: blink 1s step-end infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0; }
-    }
   </style>
 </head>
 <body>
@@ -93,87 +79,89 @@
       <span class="dot dot-red"></span>
       <span class="dot dot-amber"></span>
       <span class="dot dot-green"></span>
-      <span class="titlebar-label" id="titlebar-label">bash</span>
+      <span class="titlebar-label" id="title-label">bash</span>
     </div>
 
     <div class="body" id="output"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
   <script src="./config.js"></script>
   <script>
-
-    const PROMPT = `${CONFIG.username}@${CONFIG.hostname} ~ $ `;
-    const SPEED  = CONFIG.typingSpeed;
-    const PAUSE  = CONFIG.pauseAfterLine;
-
-    document.getElementById('titlebar-label').textContent =
+    document.getElementById('title-label').textContent =
       `${CONFIG.username}@${CONFIG.hostname}`;
 
-    function sleep(ms) {
-      return new Promise(r => setTimeout(r, ms));
+    const PROMPT = `${CONFIG.username}@${CONFIG.hostname} ~ $ `;
+    const SPEED  = CONFIG.typingSpeed   / 1000; // seconds per char
+    const PAUSE  = CONFIG.pauseAfterLine / 1000; // seconds
+
+    const output = document.getElementById('output');
+
+    function makePromptRow() {
+      const row  = document.createElement('div');
+      row.className = 'line';
+      const p = document.createElement('span');
+      p.className = 'prompt';
+      p.textContent = PROMPT;
+      row.appendChild(p);
+      const span = document.createElement('span');
+      span.className = 'text-cmd';
+      row.appendChild(span);
+      return { row, span };
     }
 
-    (async () => {
-      const output = document.getElementById('output');
-      output.innerHTML = '';
+    function makeOutputRow(type) {
+      const row  = document.createElement('div');
+      row.className = 'line';
+      const span = document.createElement('span');
+      span.className = `text-${type}`;
+      row.appendChild(span);
+      return { row, span };
+    }
 
-      function newPromptRow() {
-        const row = document.createElement('div');
-        row.className = 'line';
-        const p = document.createElement('span');
-        p.className = 'prompt';
-        p.textContent = PROMPT;
-        row.appendChild(p);
-        const t = document.createElement('span');
-        t.className = 'text-cmd';
-        row.appendChild(t);
-        output.appendChild(row);
-        return t;
-      }
+    // build the full GSAP timeline upfront —
+    // HyperFrames seeks it to an exact time per frame, never plays it live
+    const tl = gsap.timeline({ paused: true });
+    let t = 0;
 
-      const cursor = document.createElement('span');
-      cursor.id = 'cursor';
+    for (let i = 0; i < CONFIG.lines.length; i++) {
+      const { type, text } = CONFIG.lines[i];
 
-      let textEl = newPromptRow();
-      textEl.appendChild(cursor);
+      if (type === 'cmd') {
+        const { row, span } = makePromptRow();
 
-      for (let i = 0; i < CONFIG.lines.length; i++) {
-        const { type, text } = CONFIG.lines[i];
+        // prompt row appears, then a beat before the first character types
+        tl.call(() => { output.appendChild(row); }, [], t);
+        t += PAUSE;
 
-        if (type === 'cmd') {
-          if (i > 0) {
-            cursor.remove();
-            textEl = newPromptRow();
-            textEl.appendChild(cursor);
-            await sleep(PAUSE);
-          }
-          for (const ch of text) {
-            cursor.remove();
-            textEl.textContent += ch;
-            textEl.appendChild(cursor);
-            await sleep(SPEED);
-          }
-          await sleep(PAUSE);
-          cursor.remove();
-        } else {
-          const outRow = document.createElement('div');
-          outRow.className = 'line';
-          const outSpan = document.createElement('span');
-          outSpan.className = `text-${type}`;
-          outRow.appendChild(outSpan);
-          output.appendChild(outRow);
-
-          for (const ch of text) {
-            outSpan.textContent += ch;
-            await sleep(SPEED * 0.4);
-          }
-          await sleep(PAUSE);
+        for (const ch of text) {
+          const c = ch, s = span;
+          tl.call(() => { s.textContent += c; }, [], t);
+          t += SPEED;
         }
-      }
+        t += PAUSE;
 
-      textEl = newPromptRow();
-      textEl.appendChild(cursor);
-    })();
+      } else {
+        const { row, span } = makeOutputRow(type);
+
+        tl.call(() => { output.appendChild(row); }, [], t);
+
+        for (const ch of text) {
+          const c = ch, s = span;
+          tl.call(() => { s.textContent += c; }, [], t);
+          t += SPEED * 0.4;
+        }
+        t += PAUSE;
+      }
+    }
+
+    // final empty prompt — holds the last frame
+    const { row: finalRow } = makePromptRow();
+    tl.call(() => { output.appendChild(finalRow); }, [], t);
+    tl.set({}, {}, t + 1); // extend duration by 1s so the last frame is visible
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['terminal'] = tl;
   </script>
 </body>
 </html>
