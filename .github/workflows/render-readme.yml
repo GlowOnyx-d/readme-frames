@@ -29,14 +29,15 @@ jobs:
 
       # render to MP4 first (hyperframes doesn't support gif directly)
       # must cd into each project dir so hyperframes finds index.html in CWD
-      - run: cd compositions/skills-ticker && hyperframes render --fps 30 --output ../../assets/skills-ticker.mp4
+      - run: cd compositions/skills-ticker && hyperframes render --fps 60 --output ../../assets/skills-ticker.mp4
 
       - run: cd compositions/terminal && hyperframes render --fps 60 --output ../../assets/terminal.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
+      # two-pass palette approach gives best colour quality at target fps
       - run: >
           ffmpeg -i assets/skills-ticker.mp4
-          -vf "fps=15,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+          -vf "fps=30,scale=960:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
           -loop 0 assets/skills-ticker.gif
 
       - run: >
@@ -52,5 +53,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add assets/
-          git diff --staged --quiet || git commit -m "chore: re-render README animations"
-          git push
+          git commit -m "chore: re-render README animations" || echo "nothing to commit"
+          git push || echo "nothing to push"
