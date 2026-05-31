@@ -22,13 +22,13 @@ jobs:
 
       - run: npm install -g hyperframes
 
-      # config.js must sit next to the HTML files so Chrome can load it
-      - run: cp config.js compositions/config.js
+      # config.js must sit next to each index.html so Chrome can load it
+      - run: cp config.js compositions/skills-ticker/config.js && cp config.js compositions/terminal/config.js
 
       # render to MP4 first (hyperframes doesn't support gif directly)
-      - run: hyperframes render -c compositions/skills-ticker.html --fps 30 --output assets/skills-ticker.mp4
+      - run: hyperframes render -c compositions/skills-ticker/index.html --fps 30 --output assets/skills-ticker.mp4
 
-      - run: hyperframes render -c compositions/terminal.html --fps 30 --output assets/terminal.mp4
+      - run: hyperframes render -c compositions/terminal/index.html --fps 30 --output assets/terminal.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
