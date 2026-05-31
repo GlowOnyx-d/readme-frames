@@ -20,6 +20,8 @@ jobs:
 
       - run: npm install -g hyperframes
 
+      - run: cp config.js compositions/config.js
+
       - run: hyperframes render --input compositions/skills-ticker.html --format gif --fps 30 --output assets/skills-ticker.gif
 
       - run: hyperframes render --input compositions/terminal.html --format gif --fps 30 --output assets/terminal.gif
