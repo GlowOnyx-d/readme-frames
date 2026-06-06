@@ -119,8 +119,8 @@
       return { row, span };
     }
 
-    // build the full GSAP timeline upfront —
-    // HyperFrames seeks it to an exact time per frame, never plays it live
+    // build timeline — each line uses a tween with onUpdate that SETS text
+    // (never appends), so re-seeking to any frame always gives correct state
     const tl = gsap.timeline({ paused: true });
     let t = 0;
 
@@ -129,36 +129,41 @@
 
       if (type === 'cmd') {
         const { row, span } = makePromptRow();
-
-        // prompt row appears, then a beat before the first character types
         tl.call(() => { output.appendChild(row); }, [], t);
         t += PAUSE;
 
-        for (const ch of text) {
-          const c = ch, s = span;
-          tl.call(() => { s.textContent += c; }, [], t);
-          t += SPEED;
-        }
-        t += PAUSE;
+        const proxy = { n: 0 };
+        const fullText = text;
+        const s = span;
+        tl.to(proxy, {
+          n: fullText.length,
+          duration: fullText.length * SPEED,
+          ease: 'none',
+          onUpdate() { s.textContent = fullText.slice(0, Math.round(proxy.n)); },
+        }, t);
+        t += fullText.length * SPEED + PAUSE;
 
       } else {
         const { row, span } = makeOutputRow(type);
-
         tl.call(() => { output.appendChild(row); }, [], t);
 
-        for (const ch of text) {
-          const c = ch, s = span;
-          tl.call(() => { s.textContent += c; }, [], t);
-          t += SPEED * 0.4;
-        }
-        t += PAUSE;
+        const proxy = { n: 0 };
+        const fullText = text;
+        const s = span;
+        tl.to(proxy, {
+          n: fullText.length,
+          duration: fullText.length * SPEED * 0.4,
+          ease: 'none',
+          onUpdate() { s.textContent = fullText.slice(0, Math.round(proxy.n)); },
+        }, t);
+        t += fullText.length * SPEED * 0.4 + PAUSE;
       }
     }
 
-    // final empty prompt — holds the last frame
+    // final empty prompt
     const { row: finalRow } = makePromptRow();
     tl.call(() => { output.appendChild(finalRow); }, [], t);
-    tl.set({}, {}, t + 1); // extend duration by 1s so the last frame is visible
+    tl.set({}, {}, t + 1);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['terminal'] = tl;

@@ -103,35 +103,36 @@
 
     nameEl.textContent = CONFIG.introName;
 
-    const FADE     = CONFIG.nameFadeDuration;
-    const SPEED    = CONFIG.roleTypingSpeed / 1000;
-    const PAUSE    = 0.3; // gap between name fully visible and role starting
+    const FADE  = CONFIG.nameFadeDuration;
+    const SPEED = CONFIG.roleTypingSpeed / 1000;
+    const PAUSE = 0.3;
+
+    const roleText  = CONFIG.introRole;
+    const roleProxy = { n: 0 };
 
     const tl = gsap.timeline({ paused: true });
 
-    // 1. name fades in, slides up
-    tl.to(nameEl, {
-      opacity: 1,
-      y: 0,
-      duration: FADE,
-      ease: 'power3.out',
-    }, 0);
+    // 1. name fades in and slides up
+    tl.to(nameEl, { opacity: 1, y: 0, duration: FADE, ease: 'power3.out' }, 0);
 
-    // 2. prompt + cursor appear after name lands
+    // 2. prompt + cursor appear once name has landed
     const roleStart = FADE + PAUSE;
     tl.to(promptEl, { opacity: 1, duration: 0.2 }, roleStart);
     tl.to(cursorEl, { opacity: 1, duration: 0.1 }, roleStart);
 
-    // 3. type the role line character by character
-    let t = roleStart + 0.2;
-    for (const ch of CONFIG.introRole) {
-      const c = ch;
-      tl.call(() => { roleEl.textContent += c; }, [], t);
-      t += SPEED;
-    }
+    // 3. type role line — deterministic: onUpdate sets the substring, never appends
+    //    so re-seeking to any frame always produces the correct text
+    tl.to(roleProxy, {
+      n: roleText.length,
+      duration: roleText.length * SPEED,
+      ease: 'none',
+      onUpdate() {
+        roleEl.textContent = roleText.slice(0, Math.round(roleProxy.n));
+      },
+    }, roleStart + 0.2);
 
-    // 4. hold on final frame for 1s
-    tl.set({}, {}, t + 1);
+    // 4. hold on final frame
+    tl.set({}, {}, roleStart + 0.2 + roleText.length * SPEED + 1);
 
     window.__timelines = window.__timelines || {};
     window.__timelines['intro-card'] = tl;
