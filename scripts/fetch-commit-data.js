@@ -2,8 +2,9 @@
 // ──────────────────────────────────────────────────────────────────────────
 //  fetch-commit-data.js
 //
-//  Fetches weekly commit totals for the repo configured in config.js and writes
-//  them to compositions/commit-chart/data.js as `window.__COMMIT_DATA`.
+//  Aggregates monthly commit totals across all of a user's public (non-fork)
+//  repos and writes them to compositions/commit-chart/data.js as
+//  `window.__COMMIT_DATA = { months: [...], values: [...], total: N }`.
 //
 //  Runs at BUILD time (in CI, before rendering) so the composition stays fully
 //  synchronous — HyperFrames reads a composition's timeline duration on its init
@@ -19,6 +20,13 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'compositions', 'commit-chart', 'data.js');
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'readme-frames' };
+if (token) headers.Authorization = `Bearer ${token}`;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // config.js declares `const CONFIG = {...}` with no module exports — wrap it in
 // a function and eval to pull the object out without a build system.
@@ -28,56 +36,96 @@ function loadConfig() {
   return eval(`(function () { ${src}; return CONFIG; })()`);
 }
 
-function writeData(weekly) {
-  fs.writeFileSync(OUT, `window.__COMMIT_DATA = ${JSON.stringify(weekly)};\n`);
+function writeData(data) {
+  fs.writeFileSync(OUT, `window.__COMMIT_DATA = ${JSON.stringify(data)};\n`);
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// All public, non-fork repos owned by the user (paginated, most-recently pushed first).
+async function fetchRepos(user) {
+  const repos = [];
+  for (let page = 1; page <= 4; page++) {
+    const url = `https://api.github.com/users/${user}/repos?per_page=100&page=${page}&type=owner&sort=pushed`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      console.log(`repo list page ${page} → ${res.status}; stopping pagination`);
+      break;
+    }
+    const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    repos.push(...batch.filter((r) => !r.fork));
+    if (batch.length < 100) break;
+  }
+  return repos;
+}
+
+// 52 weeks of { week (unix ts), total, days[7] } for one repo. GitHub returns
+// 202 with an empty body while it computes the cache — retry a few times.
+async function commitActivity(fullName) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const res = await fetch(`https://api.github.com/repos/${fullName}/stats/commit_activity`, { headers });
+    if (res.status === 202) {
+      await sleep(2000);
+      continue;
+    }
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  }
+  return [];
+}
 
 async function main() {
-  const { commitChart = {} } = loadConfig();
-  const repo = commitChart.repo || 'bulkinglb/readme-frames';
-  const weeks = commitChart.weeks || 12;
+  const config = loadConfig();
+  const cfg = config.commitChart || {};
+  const months = cfg.months || 12;
+  const user = cfg.username || config.username || 'bulkinglb';
 
-  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
-  const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'readme-frames' };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  // build the last `months` calendar months as buckets (UTC for determinism)
+  const now = new Date();
+  const buckets = [];
+  const indexByKey = new Map();
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    indexByKey.set(`${d.getUTCFullYear()}-${d.getUTCMonth()}`, buckets.length);
+    buckets.push({ label: MONTHS[d.getUTCMonth()], value: 0 });
+  }
 
-  const url = `https://api.github.com/repos/${repo}/stats/commit_activity`;
+  let repos = [];
+  try {
+    repos = await fetchRepos(user);
+  } catch (err) {
+    console.log(`failed to list repos for @${user} (${err.message})`);
+  }
+  console.log(`aggregating ${repos.length} public repos for @${user}`);
 
-  // GitHub returns 202 with an empty body while it computes the stats cache —
-  // retry a handful of times before giving up to the fallback.
-  let weekly = null;
-  for (let attempt = 1; attempt <= 5; attempt++) {
+  for (const repo of repos) {
     try {
-      const res = await fetch(url, { headers });
-      if (res.status === 202) {
-        console.log(`stats still computing (202) — retry ${attempt}/5`);
-        await sleep(3000);
-        continue;
-      }
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length) {
-          weekly = data.slice(-weeks).map((w) => w.total);
+      const weeks = await commitActivity(repo.full_name);
+      for (const w of weeks) {
+        if (!w || !Array.isArray(w.days)) continue;
+        for (let d = 0; d < w.days.length; d++) {
+          if (!w.days[d]) continue;
+          const date = new Date((w.week + d * 86400) * 1000);
+          const idx = indexByKey.get(`${date.getUTCFullYear()}-${date.getUTCMonth()}`);
+          if (idx !== undefined) buckets[idx].value += w.days[d];
         }
-        break;
       }
-      console.log(`GitHub API responded ${res.status} — using built-in fallback`);
-      break;
     } catch (err) {
-      console.log(`fetch failed (${err.message}) — using built-in fallback`);
-      break;
+      console.log(`skipping ${repo.full_name} (${err.message})`);
     }
   }
 
-  if (weekly && weekly.some((n) => n > 0)) {
-    writeData(weekly);
-    console.log(`wrote ${weekly.length} weeks of live data for ${repo} → ${OUT}`);
+  const values = buckets.map((b) => b.value);
+  const total = values.reduce((a, b) => a + b, 0);
+
+  if (total > 0) {
+    writeData({ months: buckets.map((b) => b.label), values, total });
+    console.log(`wrote ${months} months (${total} commits) for @${user} → ${OUT}`);
   } else {
-    // null signals the composition to use its deterministic fallback shape
     writeData(null);
-    console.log(`no live data for ${repo} — composition will use its fallback`);
+    console.log(`no commit data for @${user} — composition will use its fallback`);
   }
 }
 

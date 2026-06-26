@@ -38,12 +38,15 @@ const CONFIG = {
   roleTypingSpeed:  60,    // ms per character
 
   // ── Commit activity chart ─────────────────────────────────────
-  //   repo:  owner/repo to pull stats from (GitHub REST API, no auth needed)
-  //   weeks: how many of the most recent weeks to show as bars
+  //   Monthly commit totals aggregated across all your public repos
+  //   (GitHub REST API, no auth needed — fetched at build time).
+  //   months:   how many recent months to chart
+  //   color:    area + line colour
+  //   username: whose repos to aggregate (defaults to the username above)
   commitChart: {
-    repo: 'bulkinglb/readme-frames',
-    weeks: 12,
-    barColor: '#7ee787',
+    months: 12,
+    color: '#7ee787',
+    // username: 'someoneelse',
   },
 
   // ── Terminal timing ───────────────────────────────────────────
