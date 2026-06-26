@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      overflow: hidden;
+    }
+
+    #stage {
+      width: 900px;
+      height: 300px;
+      padding: 32px 40px;
+      font-family: ui-monospace, 'SF Mono', monospace;
+      position: relative;
+    }
+
+    #title {
+      color: #e6edf3;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    #subtitle {
+      color: #8b949e;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    #chart {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      bottom: 48px;
+      top: 88px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+    }
+
+    .bar {
+      width: 60%;
+      border-radius: 3px 3px 0 0;
+      height: 0%;
+    }
+
+    .bar-label {
+      color: #484f58;
+      font-size: 10px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage"
+    data-composition-id="commit-chart"
+    data-start="0"
+    data-width="900"
+    data-height="300">
+
+    <div id="title">commit activity</div>
+    <div id="subtitle"></div>
+    <div id="chart"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="./config.js"></script>
+  <script>
+    (async () => {
+      const cfg   = CONFIG.commitChart || {};
+      const repo  = cfg.repo  || 'bulkinglb/readme-frames';
+      const weeks = cfg.weeks || 12;
+      const color = cfg.barColor || '#7ee787';
+
+      document.getElementById('subtitle').textContent = `last ${weeks} weeks · ${repo}`;
+
+      // deterministic fallback in case the API is rate-limited or still
+      // computing stats (GitHub returns 202 while the cache warms up)
+      const fallback = Array.from({ length: weeks }, (_, i) => 3 + ((i * 7) % 12));
+      let weekly = fallback;
+
+      try {
+        const res = await fetch(`https://api.github.com/repos/${repo}/stats/commit_activity`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const slice = data.slice(-weeks).map(w => w.total);
+            if (slice.some(n => n > 0)) weekly = slice;
+          }
+        }
+      } catch (e) {
+        // network hiccup — fallback already set
+      }
+
+      const max   = Math.max(...weekly, 1);
+      const chart = document.getElementById('chart');
+
+      const bars = weekly.map((count, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'bar-wrap';
+
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.background = color;
+        wrap.appendChild(bar);
+
+        const label = document.createElement('div');
+        label.className = 'bar-label';
+        label.textContent = i % 2 === 0 ? `w-${weekly.length - i}` : '';
+        wrap.appendChild(label);
+
+        chart.appendChild(wrap);
+        return { bar, count };
+      });
+
+      const tl = gsap.timeline({ paused: true });
+
+      bars.forEach(({ bar, count }, i) => {
+        const heightPct = (count / max) * 100;
+        tl.to(bar, {
+          height: `${heightPct}%`,
+          duration: 0.6,
+          ease: 'power2.out',
+        }, 0.3 + i * 0.08);
+      });
+
+      tl.set({}, {}, 0.3 + bars.length * 0.08 + 1.2);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines['commit-chart'] = tl;
+    })();
+  </script>
+</body>
+</html>

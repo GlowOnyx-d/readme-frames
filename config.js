@@ -37,6 +37,15 @@ const CONFIG = {
   nameFadeDuration: 0.9,   // seconds
   roleTypingSpeed:  60,    // ms per character
 
+  // ── Commit activity chart ─────────────────────────────────────
+  //   repo:  owner/repo to pull stats from (GitHub REST API, no auth needed)
+  //   weeks: how many of the most recent weeks to show as bars
+  commitChart: {
+    repo: 'bulkinglb/readme-frames',
+    weeks: 12,
+    barColor: '#7ee787',
+  },
+
   // ── Terminal timing ───────────────────────────────────────────
   typingSpeed:   55,   // ms per character (commands)
   pauseAfterLine: 800, // ms of silence before the next prompt appears

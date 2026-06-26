@@ -47,7 +47,11 @@ jobs:
         run: npm install -g hyperframes
 
       # config.js must sit next to each index.html so Chrome can load it
-      - run: cp config.js compositions/skills-ticker/config.js && cp config.js compositions/terminal/config.js && cp config.js compositions/intro-card/config.js
+      - run: >
+          cp config.js compositions/skills-ticker/config.js &&
+          cp config.js compositions/terminal/config.js &&
+          cp config.js compositions/intro-card/config.js &&
+          cp config.js compositions/commit-chart/config.js
 
       # render to MP4 first (hyperframes doesn't support gif directly)
       # must cd into each project dir so hyperframes finds index.html in CWD
@@ -56,6 +60,8 @@ jobs:
       - run: cd compositions/skills-ticker && hyperframes render --fps 60 --output ../../assets/skills-ticker.mp4
 
       - run: cd compositions/terminal && hyperframes render --fps 60 --output ../../assets/terminal.mp4
+
+      - run: cd compositions/commit-chart && hyperframes render --fps 60 --output ../../assets/commit-chart.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
@@ -73,8 +79,13 @@ jobs:
           -vf "fps=30,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
           -loop 0 assets/terminal.gif
 
+      - run: >
+          ffmpeg -y -i assets/commit-chart.mp4
+          -vf "fps=30,scale=900:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+          -loop 0 assets/commit-chart.gif
+
       # clean up intermediary MP4s
-      - run: rm assets/intro-card.mp4 assets/skills-ticker.mp4 assets/terminal.mp4
+      - run: rm assets/intro-card.mp4 assets/skills-ticker.mp4 assets/terminal.mp4 assets/commit-chart.mp4
 
       - name: Commit rendered GIFs
         run: |
