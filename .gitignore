@@ -1,0 +1,5 @@
+# Build artifacts — regenerated on every render (locally and in CI):
+#   config.js is copied next to each composition so Chrome can load it
+#   data.js is fetched from the GitHub API by scripts/fetch-commit-data.js
+compositions/*/config.js
+compositions/*/data.js

@@ -53,6 +53,14 @@ jobs:
           cp config.js compositions/intro-card/config.js &&
           cp config.js compositions/commit-chart/config.js
 
+      # fetch live commit activity and bake it into compositions/commit-chart/data.js
+      # so the composition can build its timeline synchronously (HyperFrames can't
+      # render an in-browser async fetch — it captures a permanent zero duration)
+      - name: Fetch commit activity data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/fetch-commit-data.js
+
       # render to MP4 first (hyperframes doesn't support gif directly)
       # must cd into each project dir so hyperframes finds index.html in CWD
       - run: cd compositions/intro-card && hyperframes render --fps 60 --output ../../assets/intro-card.mp4

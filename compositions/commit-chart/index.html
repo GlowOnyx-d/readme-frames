@@ -78,70 +78,64 @@
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
   <script src="./config.js"></script>
+  <!-- data.js is generated at build time by scripts/fetch-commit-data.js and
+       sets window.__COMMIT_DATA. It's a build artifact (not committed); when
+       absent — e.g. opening this file directly — the fallback below is used. -->
+  <script src="./data.js"></script>
   <script>
-    (async () => {
-      const cfg   = CONFIG.commitChart || {};
-      const repo  = cfg.repo  || 'bulkinglb/readme-frames';
-      const weeks = cfg.weeks || 12;
-      const color = cfg.barColor || '#7ee787';
+    // Built synchronously so HyperFrames can read the timeline duration on its
+    // init pass. The live GitHub data is fetched at build time (see data.js)
+    // rather than in the browser — an in-browser `await fetch()` registers the
+    // timeline too late and HyperFrames captures a permanent zero duration.
+    const cfg   = CONFIG.commitChart || {};
+    const repo  = cfg.repo  || 'bulkinglb/readme-frames';
+    const weeks = cfg.weeks || 12;
+    const color = cfg.barColor || '#7ee787';
 
-      document.getElementById('subtitle').textContent = `last ${weeks} weeks · ${repo}`;
+    document.getElementById('subtitle').textContent = `last ${weeks} weeks · ${repo}`;
 
-      // deterministic fallback in case the API is rate-limited or still
-      // computing stats (GitHub returns 202 while the cache warms up)
-      const fallback = Array.from({ length: weeks }, (_, i) => 3 + ((i * 7) % 12));
-      let weekly = fallback;
+    // deterministic fallback when data.js is missing/null (local preview, a
+    // rate-limited API, or GitHub still computing the stats cache)
+    const fallback = Array.from({ length: weeks }, (_, i) => 3 + ((i * 7) % 12));
+    const live   = (typeof window.__COMMIT_DATA !== 'undefined' && window.__COMMIT_DATA) || null;
+    const weekly = (Array.isArray(live) && live.length) ? live : fallback;
 
-      try {
-        const res = await fetch(`https://api.github.com/repos/${repo}/stats/commit_activity`);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const slice = data.slice(-weeks).map(w => w.total);
-            if (slice.some(n => n > 0)) weekly = slice;
-          }
-        }
-      } catch (e) {
-        // network hiccup — fallback already set
-      }
+    const max   = Math.max(...weekly, 1);
+    const chart = document.getElementById('chart');
 
-      const max   = Math.max(...weekly, 1);
-      const chart = document.getElementById('chart');
+    const bars = weekly.map((count, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'bar-wrap';
 
-      const bars = weekly.map((count, i) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.background = color;
+      wrap.appendChild(bar);
 
-        const bar = document.createElement('div');
-        bar.className = 'bar';
-        bar.style.background = color;
-        wrap.appendChild(bar);
+      const label = document.createElement('div');
+      label.className = 'bar-label';
+      label.textContent = i % 2 === 0 ? `w-${weekly.length - i}` : '';
+      wrap.appendChild(label);
 
-        const label = document.createElement('div');
-        label.className = 'bar-label';
-        label.textContent = i % 2 === 0 ? `w-${weekly.length - i}` : '';
-        wrap.appendChild(label);
+      chart.appendChild(wrap);
+      return { bar, count };
+    });
 
-        chart.appendChild(wrap);
-        return { bar, count };
-      });
+    const tl = gsap.timeline({ paused: true });
 
-      const tl = gsap.timeline({ paused: true });
+    bars.forEach(({ bar, count }, i) => {
+      const heightPct = (count / max) * 100;
+      tl.to(bar, {
+        height: `${heightPct}%`,
+        duration: 0.6,
+        ease: 'power2.out',
+      }, 0.3 + i * 0.08);
+    });
 
-      bars.forEach(({ bar, count }, i) => {
-        const heightPct = (count / max) * 100;
-        tl.to(bar, {
-          height: `${heightPct}%`,
-          duration: 0.6,
-          ease: 'power2.out',
-        }, 0.3 + i * 0.08);
-      });
+    tl.set({}, {}, 0.3 + bars.length * 0.08 + 1.2);
 
-      tl.set({}, {}, 0.3 + bars.length * 0.08 + 1.2);
-
-      window.__timelines = window.__timelines || {};
-      window.__timelines['commit-chart'] = tl;
-    })();
+    window.__timelines = window.__timelines || {};
+    window.__timelines['commit-chart'] = tl;
   </script>
 </body>
 </html>
