@@ -49,6 +49,16 @@ const CONFIG = {
     // username: 'someoneelse',
   },
 
+  // ── Language donut ────────────────────────────────────────────
+  //   Aggregates language bytes across all your public repos
+  //   (GitHub REST API, no auth needed — fetched at build time).
+  //   top:      how many languages to show (rest grouped as "Other")
+  //   username: whose repos to aggregate (defaults to the username above)
+  langDonut: {
+    top: 6,
+    // username: 'someoneelse',
+  },
+
   // ── Terminal timing ───────────────────────────────────────────
   typingSpeed:   55,   // ms per character (commands)
   pauseAfterLine: 800, // ms of silence before the next prompt appears

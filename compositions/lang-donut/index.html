@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      overflow: hidden;
+    }
+
+    #stage {
+      width: 600px;
+      height: 400px;
+      padding: 32px 40px;
+      font-family: ui-monospace, 'SF Mono', monospace;
+      position: relative;
+    }
+
+    #title {
+      color: #e6edf3;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    #subtitle {
+      color: #8b949e;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    #body {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      top: 90px;
+      bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    #donut { flex: 0 0 240px; }
+    #donut svg { display: block; }
+
+    #legend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      opacity: 0;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      margin-right: 10px;
+      flex: 0 0 auto;
+    }
+
+    .name { color: #c9d1d9; }
+    .pct  { margin-left: auto; color: #8b949e; }
+  </style>
+</head>
+<body>
+  <div id="stage"
+    data-composition-id="lang-donut"
+    data-start="0"
+    data-width="600"
+    data-height="400">
+
+    <div id="title">languages</div>
+    <div id="subtitle"></div>
+    <div id="body">
+      <div id="donut"></div>
+      <div id="legend"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="./config.js"></script>
+  <!-- data.js is generated at build time by scripts/fetch-language-data.js and
+       sets window.__LANG_DATA = [{ name, bytes }, …]. It's a build artifact (not
+       committed); when absent — e.g. opening this file directly — the fallback
+       below is used. -->
+  <script src="./data.js"></script>
+  <script>
+    // Built synchronously so HyperFrames can read the timeline duration on its
+    // init pass. The live GitHub data is fetched at build time (see data.js)
+    // rather than in the browser — an in-browser `await fetch()` registers the
+    // timeline too late and HyperFrames captures a permanent zero duration.
+
+    // GitHub Linguist colours for the common languages, with a fallback palette
+    // for anything not listed.
+    const LANG_COLORS = {
+      JavaScript: '#f1e05a', TypeScript: '#3178c6', Python: '#3572A5',
+      Java: '#b07219', 'C++': '#f34b7d', C: '#555555', 'C#': '#178600',
+      Go: '#00ADD8', Rust: '#dea584', Ruby: '#701516', PHP: '#4F5D95',
+      Swift: '#F05138', Kotlin: '#A97BFF', Dart: '#00B4AB', Shell: '#89e051',
+      HTML: '#e34c26', CSS: '#563d7c', SCSS: '#c6538c', Vue: '#41b883',
+      Svelte: '#ff3e00', 'Jupyter Notebook': '#DA5B0B', Lua: '#000080',
+      'Objective-C': '#438eff', Scala: '#c22d40', Haskell: '#5e5086',
+      Elixir: '#6e4a7e', Clojure: '#db5855', Solidity: '#AA6746',
+      Makefile: '#427819', Dockerfile: '#384d54', PowerShell: '#012456',
+    };
+    const FALLBACK_COLORS = ['#7ee787', '#79c0ff', '#d2a8ff', '#ffa657', '#f778ba', '#a5d6ff', '#ffdf5d'];
+    const colorFor = (name, i) =>
+      name === 'Other' ? '#6e7681' : (LANG_COLORS[name] || FALLBACK_COLORS[i % FALLBACK_COLORS.length]);
+
+    const cfg  = CONFIG.langDonut || {};
+    const topN = cfg.top || 6;
+    const user = cfg.username || CONFIG.username || 'bulkinglb';
+
+    // ── data ─────────────────────────────────────────────────────────────────
+    const fallback = [
+      { name: 'TypeScript', bytes: 48000 }, { name: 'JavaScript', bytes: 32000 },
+      { name: 'Python', bytes: 18000 },     { name: 'HTML', bytes: 9000 },
+      { name: 'CSS', bytes: 6000 },         { name: 'Shell', bytes: 2500 },
+    ];
+    const live = (typeof window.__LANG_DATA !== 'undefined' && window.__LANG_DATA) || null;
+    const langs = ((Array.isArray(live) && live.length) ? live.slice() : fallback)
+      .sort((a, b) => b.bytes - a.bytes);
+
+    // top N languages, everything else collapsed into "Other"
+    const shown = langs.slice(0, topN);
+    const restBytes = langs.slice(topN).reduce((s, l) => s + l.bytes, 0);
+    if (restBytes > 0) shown.push({ name: 'Other', bytes: restBytes });
+
+    const total = shown.reduce((s, l) => s + l.bytes, 0) || 1;
+
+    document.getElementById('subtitle').textContent = `most used across @${user}'s public repos`;
+
+    // ── donut geometry (stroke-dasharray arcs) ────────────────────────────────
+    const cx = 120, cy = 120, r = 92, THICK = 28;
+    const C = 2 * Math.PI * r;
+
+    let cum = 0;
+    const segs = shown.map((l, i) => {
+      const f = l.bytes / total;
+      const seg = {
+        name: l.name,
+        pct: Math.round(f * 100),
+        f,
+        color: colorFor(l.name, i),
+        start: cum, // cumulative fraction before this segment
+      };
+      cum += f;
+      return seg;
+    });
+
+    // each arc starts hidden (dasharray "0 C"); dashoffset positions its start
+    const circles = segs.map((s) =>
+      `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}"
+        stroke-width="${THICK}" stroke-dasharray="0 ${C.toFixed(2)}"
+        stroke-dashoffset="${(-s.start * C).toFixed(2)}"
+        transform="rotate(-90 ${cx} ${cy})" />`
+    ).join('');
+
+    const centerLabel = `
+      <g id="center-label" opacity="0">
+        <text x="${cx}" y="${cy - 2}" text-anchor="middle" fill="#e6edf3"
+          font-size="30" font-weight="700" font-family="ui-monospace, monospace">${segs[0].pct}%</text>
+        <text x="${cx}" y="${cy + 20}" text-anchor="middle" fill="#8b949e"
+          font-size="12" font-family="ui-monospace, monospace">${segs[0].name}</text>
+      </g>`;
+
+    document.getElementById('donut').innerHTML =
+      `<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+        ${circles}
+        ${centerLabel}
+      </svg>`;
+
+    document.getElementById('legend').innerHTML = segs.map((s) =>
+      `<div class="legend-row">
+        <span class="dot" style="background:${s.color}"></span>
+        <span class="name">${s.name}</span>
+        <span class="pct">${s.pct}%</span>
+      </div>`
+    ).join('');
+
+    // ── animation ──────────────────────────────────────────────────────────────
+    const circleEls = [...document.querySelectorAll('#donut circle')];
+    const rowEls = [...document.querySelectorAll('.legend-row')];
+    const centerEl = document.getElementById('center-label');
+
+    const tl = gsap.timeline({ paused: true });
+
+    segs.forEach((s, i) => {
+      const start = 0.3 + i * 0.16;
+      const proxy = { len: 0 };
+      const el = circleEls[i];
+      tl.to(proxy, {
+        len: s.f * C,
+        duration: 0.5,
+        ease: 'power2.out',
+        onUpdate() { el.setAttribute('stroke-dasharray', `${proxy.len.toFixed(2)} ${C.toFixed(2)}`); },
+      }, start);
+      tl.fromTo(rowEls[i],
+        { opacity: 0, x: 8 },
+        { opacity: 1, x: 0, duration: 0.35, ease: 'power2.out' }, start);
+    });
+
+    const labelStart = 0.3 + segs.length * 0.16 + 0.2;
+    tl.to(centerEl, { opacity: 1, duration: 0.4 }, labelStart);
+    tl.set({}, {}, labelStart + 1.2); // hold the finished donut for a beat
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['lang-donut'] = tl;
+  </script>
+</body>
+</html>

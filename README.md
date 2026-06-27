@@ -4,7 +4,7 @@
 
 Animated GIFs for GitHub profile READMEs, rendered with [HyperFrames](https://github.com/heygen-com/hyperframes).
 
-Fork → edit one config file → render → embed. Four compositions ship out of the box.
+Fork → edit one config file → render → embed. Five compositions ship out of the box.
 
 ![Intro card](./assets/intro-card.gif)
 
@@ -13,6 +13,8 @@ Fork → edit one config file → render → embed. Four compositions ship out o
 ![Terminal](./assets/terminal.gif)
 
 ![Commit activity](./assets/commit-chart.gif)
+
+![Languages](./assets/lang-donut.gif)
 
 ---
 
@@ -24,6 +26,7 @@ Fork → edit one config file → render → embed. Four compositions ship out o
 | `compositions/skills-ticker/` | 1920 × 120 | Infinite-scrolling tech stack marquee |
 | `compositions/terminal/` | 800 × 320 | Fake terminal that types your story |
 | `compositions/commit-chart/` | 900 × 300 | Monthly commit activity across your repos, area chart live from the GitHub API |
+| `compositions/lang-donut/` | 600 × 400 | Most-used languages across your repos, donut chart live from the GitHub API |
 
 ---
 
@@ -31,7 +34,6 @@ Fork → edit one config file → render → embed. Four compositions ship out o
 
 | Idea | Dimensions | Notes |
 |------|-----------|-------|
-| Language donut chart | 600 × 400 | Pulls from GitHub API |
 | Project spotlight reel | 1280 × 480 | One slide per pinned repo |
 | Live streak counter | 900 × 200 | Numbers count up from zero |
 | Contribution timeline | 1280 × 200 | Horizontal dot-per-month |
@@ -60,9 +62,9 @@ ffmpeg -y -i assets/terminal.mp4 \
   -loop 0 assets/terminal.gif
 ```
 
-Repeat for `intro-card`, `skills-ticker`, and `commit-chart` (see `.github/workflows/render-readme.yml` for the exact commands used in CI) — or just push and let the Action do it for you.
+Repeat for `intro-card`, `skills-ticker`, `commit-chart`, and `lang-donut` (see `.github/workflows/render-readme.yml` for the exact commands used in CI) — or just push and let the Action do it for you.
 
-> **commit-chart** needs one extra step first — `node scripts/fetch-commit-data.js` aggregates your monthly commit activity into `compositions/commit-chart/data.js` before rendering. Set `GITHUB_TOKEN` to avoid the unauthenticated rate limit (CI does this automatically).
+> **commit-chart** and **lang-donut** each need one extra step first — `node scripts/fetch-commit-data.js` and `node scripts/fetch-language-data.js` aggregate your GitHub activity into the composition's `data.js` before rendering. Set `GITHUB_TOKEN` to avoid the unauthenticated rate limit (CI does this automatically).
 
 ---
 
@@ -109,6 +111,11 @@ const CONFIG = {
     months: 12,
     color: '#7ee787',
   },
+
+  // language donut — language bytes aggregated across all your public repos
+  langDonut: {
+    top: 6,   // languages to show, rest grouped as "Other"
+  },
 };
 ```
 
@@ -135,6 +142,7 @@ After forking, the Action will render and commit the GIFs to your fork's `assets
 ![Skills](https://raw.githubusercontent.com/username/readme-frames/master/assets/skills-ticker.gif)
 ![Terminal](https://raw.githubusercontent.com/username/readme-frames/master/assets/terminal.gif)
 ![Commits](https://raw.githubusercontent.com/username/readme-frames/master/assets/commit-chart.gif)
+![Languages](https://raw.githubusercontent.com/username/readme-frames/master/assets/lang-donut.gif)
 ```
 
 The `raw.githubusercontent.com` URL always serves the latest committed GIF straight from your fork — no copying files, no manual updates.

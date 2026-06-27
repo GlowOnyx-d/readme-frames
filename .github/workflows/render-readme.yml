@@ -51,15 +51,21 @@ jobs:
           cp config.js compositions/skills-ticker/config.js &&
           cp config.js compositions/terminal/config.js &&
           cp config.js compositions/intro-card/config.js &&
-          cp config.js compositions/commit-chart/config.js
+          cp config.js compositions/commit-chart/config.js &&
+          cp config.js compositions/lang-donut/config.js
 
-      # fetch live commit activity and bake it into compositions/commit-chart/data.js
-      # so the composition can build its timeline synchronously (HyperFrames can't
-      # render an in-browser async fetch — it captures a permanent zero duration)
+      # fetch live GitHub data and bake it into each composition's data.js so they
+      # can build their timelines synchronously (HyperFrames can't render an
+      # in-browser async fetch — it captures a permanent zero duration)
       - name: Fetch commit activity data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/fetch-commit-data.js
+
+      - name: Fetch language data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/fetch-language-data.js
 
       # render to MP4 first (hyperframes doesn't support gif directly)
       # must cd into each project dir so hyperframes finds index.html in CWD
@@ -70,6 +76,8 @@ jobs:
       - run: cd compositions/terminal && hyperframes render --fps 60 --output ../../assets/terminal.mp4
 
       - run: cd compositions/commit-chart && hyperframes render --fps 60 --output ../../assets/commit-chart.mp4
+
+      - run: cd compositions/lang-donut && hyperframes render --fps 60 --output ../../assets/lang-donut.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
@@ -92,8 +100,13 @@ jobs:
           -vf "fps=30,scale=900:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
           -loop 0 assets/commit-chart.gif
 
+      - run: >
+          ffmpeg -y -i assets/lang-donut.mp4
+          -vf "fps=30,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+          -loop 0 assets/lang-donut.gif
+
       # clean up intermediary MP4s
-      - run: rm assets/intro-card.mp4 assets/skills-ticker.mp4 assets/terminal.mp4 assets/commit-chart.mp4
+      - run: rm assets/intro-card.mp4 assets/skills-ticker.mp4 assets/terminal.mp4 assets/commit-chart.mp4 assets/lang-donut.mp4
 
       - name: Commit rendered GIFs
         run: |
