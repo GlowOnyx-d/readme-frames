@@ -6,7 +6,7 @@
 const CONFIG = {
 
   // ── Identity ──────────────────────────────────────────────────
-  username: 'bulkinglb',
+  username: 'GlowOnyx-d',
   hostname: 'github',     // shows as  username@hostname ~ $
 
   // ── Terminal lines ────────────────────────────────────────────
@@ -19,24 +19,8 @@ const CONFIG = {
   lines: [
     { type: 'cmd',     text: 'whoami' },
     { type: 'out',     text: 'bulkinglb — dedicated developer' },
-    { type: 'cmd',     text: 'cat interests.txt' },
-    { type: 'info',    text: 'open-source && challenging problems' },
-    { type: 'cmd',     text: 'cat stack.txt' },
-    { type: 'success', text: '> TypeScript  React  Java  Go  C++' },
-    { type: 'cmd',     text: 'echo $QUOTE' },
-    { type: 'success', text: '2b||!2b — that is the question' },
   ],
-
-  // ── Intro card ────────────────────────────────────────────────
-  //   name:          large heading that fades in
-  //   role:          typed out beneath it
-  //   nameFadeDuration:  seconds for the name fade-in
-  //   roleTypingSpeed:   ms per character for the role line
-  introName: 'bulkinglb',
-  introRole: 'dedicated developer — open-source && challenging problems',
-  nameFadeDuration: 0.9,   // seconds
-  roleTypingSpeed:  60,    // ms per character
-
+  
   // ── Commit activity chart ─────────────────────────────────────
   //   Monthly commit totals aggregated across all your public repos
   //   (GitHub REST API, no auth needed — fetched at build time).
