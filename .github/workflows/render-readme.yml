@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'compositions/**'
-      - 'config.js'
-      - '.github/workflows/render-readme.yml'
+      - "compositions/**"
+      - "config.js"
+      - ".github/workflows/render-readme.yml"
 
 jobs:
   render:
@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Cache apt packages
         uses: actions/cache@v4
@@ -69,15 +69,15 @@ jobs:
 
       # render to MP4 first (hyperframes doesn't support gif directly)
       # must cd into each project dir so hyperframes finds index.html in CWD
-      - run: cd compositions/intro-card && hyperframes render --fps 60 --output ../../assets/intro-card.mp4
+      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --output ../../assets/intro-card.mp4
 
-      - run: cd compositions/skills-ticker && hyperframes render --fps 60 --output ../../assets/skills-ticker.mp4
+      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --output ../../assets/intro-card.mp4
 
-      - run: cd compositions/terminal && hyperframes render --fps 60 --output ../../assets/terminal.mp4
+      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --output ../../assets/intro-card.mp4
 
-      - run: cd compositions/commit-chart && hyperframes render --fps 60 --output ../../assets/commit-chart.mp4
+      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --output ../../assets/intro-card.mp4
 
-      - run: cd compositions/lang-donut && hyperframes render --fps 60 --output ../../assets/lang-donut.mp4
+      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --output ../../assets/intro-card.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
