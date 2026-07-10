@@ -58,7 +58,7 @@ async function fetchRepos(user) {
 async function main() {
   const config = loadConfig();
   const cfg = config.langDonut || {};
-  const user = cfg.username || config.username || 'bulkinglb';
+  const user = cfg.username || config.username || 'GlowOnyx-d';
 
   let repos = [];
   try {

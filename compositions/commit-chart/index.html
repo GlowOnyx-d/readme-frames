@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
       background: #0d1117;
@@ -38,15 +43,14 @@
       bottom: 28px;
     }
 
-    #plot svg { display: block; }
+    #plot svg {
+      display: block;
+    }
   </style>
 </head>
+
 <body>
-  <div id="stage"
-    data-composition-id="commit-chart"
-    data-start="0"
-    data-width="900"
-    data-height="300">
+  <div id="stage" data-composition-id="commit-chart" data-start="0" data-width="900" data-height="300">
 
     <div id="title">commit activity</div>
     <div id="subtitle"></div>
@@ -65,15 +69,15 @@
     // init pass. The live GitHub data is fetched at build time (see data.js)
     // rather than in the browser — an in-browser `await fetch()` registers the
     // timeline too late and HyperFrames captures a permanent zero duration.
-    const cfg    = CONFIG.commitChart || {};
+    const cfg = CONFIG.commitChart || {};
     const months = cfg.months || 12;
-    const color  = cfg.color || cfg.barColor || '#7ee787';
-    const user   = cfg.username || CONFIG.username || 'bulkinglb';
+    const color = cfg.color || cfg.barColor || '#7ee787';
+    const user = cfg.username || CONFIG.username || 'GlowOnyx-d';
 
     // ── data ────────────────────────────────────────────────────────────────
     // data.js sets window.__COMMIT_DATA = { months: ['Jul',…], values: [12,…] }.
     // Fall back to a plausible deterministic shape when it's missing/null.
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     function fallback() {
       const now = new Date();
@@ -93,7 +97,7 @@
 
     const labels = data.months;
     const values = data.values;
-    const total  = values.reduce((a, b) => a + b, 0);
+    const total = values.reduce((a, b) => a + b, 0);
 
     document.getElementById('subtitle').textContent =
       `${total.toLocaleString()} commits · last ${values.length} months · @${user}`;
@@ -178,4 +182,5 @@
     window.__timelines['commit-chart'] = tl;
   </script>
 </body>
+
 </html>

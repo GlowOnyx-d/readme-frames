@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
       background: #0d1117;
@@ -41,8 +46,13 @@
       gap: 28px;
     }
 
-    #donut { flex: 0 0 240px; }
-    #donut svg { display: block; }
+    #donut {
+      flex: 0 0 240px;
+    }
+
+    #donut svg {
+      display: block;
+    }
 
     #legend {
       flex: 1;
@@ -66,16 +76,19 @@
       flex: 0 0 auto;
     }
 
-    .name { color: #c9d1d9; }
-    .pct  { margin-left: auto; color: #8b949e; }
+    .name {
+      color: #c9d1d9;
+    }
+
+    .pct {
+      margin-left: auto;
+      color: #8b949e;
+    }
   </style>
 </head>
+
 <body>
-  <div id="stage"
-    data-composition-id="lang-donut"
-    data-start="0"
-    data-width="600"
-    data-height="400">
+  <div id="stage" data-composition-id="lang-donut" data-start="0" data-width="600" data-height="400">
 
     <div id="title">languages</div>
     <div id="subtitle"></div>
@@ -115,15 +128,15 @@
     const colorFor = (name, i) =>
       name === 'Other' ? '#6e7681' : (LANG_COLORS[name] || FALLBACK_COLORS[i % FALLBACK_COLORS.length]);
 
-    const cfg  = CONFIG.langDonut || {};
+    const cfg = CONFIG.langDonut || {};
     const topN = cfg.top || 6;
-    const user = cfg.username || CONFIG.username || 'bulkinglb';
+    const user = cfg.username || CONFIG.username || 'GlowOnyx-d';
 
     // ── data ─────────────────────────────────────────────────────────────────
     const fallback = [
       { name: 'TypeScript', bytes: 48000 }, { name: 'JavaScript', bytes: 32000 },
-      { name: 'Python', bytes: 18000 },     { name: 'HTML', bytes: 9000 },
-      { name: 'CSS', bytes: 6000 },         { name: 'Shell', bytes: 2500 },
+      { name: 'Python', bytes: 18000 }, { name: 'HTML', bytes: 9000 },
+      { name: 'CSS', bytes: 6000 }, { name: 'Shell', bytes: 2500 },
     ];
     const live = (typeof window.__LANG_DATA !== 'undefined' && window.__LANG_DATA) || null;
     const langs = ((Array.isArray(live) && live.length) ? live.slice() : fallback)
@@ -216,4 +229,5 @@
     window.__timelines['lang-donut'] = tl;
   </script>
 </body>
+
 </html>
