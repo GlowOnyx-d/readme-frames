@@ -69,15 +69,17 @@ jobs:
 
       # render to MP4 first (hyperframes doesn't support gif directly)
       # must cd into each project dir so hyperframes finds index.html in CWD
-      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --output ../../assets/intro-card.mp4
+      # --docker: avoids SwiftShader/BeginFrame capture failures on GH runners
+      # --workers 1: sequential capture, avoids probe session race conditions
+      - run: cd compositions/intro-card && hyperframes render --fps 60 --docker --workers 1 --output ../../assets/intro-card.mp4
 
-      - run: cd compositions/skills-ticker && hyperframes render --fps 60 --docker --output ../../assets/skills-ticker.mp4
+      - run: cd compositions/skills-ticker && hyperframes render --fps 60 --docker --workers 1 --output ../../assets/skills-ticker.mp4
 
-      - run: cd compositions/terminal && hyperframes render --fps 60 --docker --output ../../assets/terminal.mp4
+      - run: cd compositions/terminal && hyperframes render --fps 60 --docker --workers 1 --output ../../assets/terminal.mp4
 
-      - run: cd compositions/commit-chart && hyperframes render --fps 60 --docker --output ../../assets/commit-chart.mp4
+      - run: cd compositions/commit-chart && hyperframes render --fps 60 --docker --workers 1 --output ../../assets/commit-chart.mp4
 
-      - run: cd compositions/lang-donut && hyperframes render --fps 60 --docker --output ../../assets/lang-donut.mp4
+      - run: cd compositions/lang-donut && hyperframes render --fps 60 --docker --workers 1 --output ../../assets/lang-donut.mp4
 
       # convert MP4 → optimised GIF with ffmpeg
       - run: >
