@@ -20,7 +20,7 @@ const CONFIG = {
     { type: 'cmd', text: 'whoami' },
     { type: 'out', text: 'GlowOnyx-d — dedicated developer' },
     { type: 'cmd', text: 'cat interests.txt' },
-    { type: 'info', text: 'open-source && challenging problems' },
+    { type: 'info', text: 'being obbessed' },
     { type: 'cmd', text: 'cat stack.txt' },
     { type: 'success', text: '> TypeScript  React  Java  Go  C++' },
     { type: 'cmd', text: 'echo $QUOTE' },
