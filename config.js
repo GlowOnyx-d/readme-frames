@@ -20,7 +20,7 @@ const CONFIG = {
     { type: 'cmd', text: 'whoami' },
     { type: 'out', text: 'GlowOnyx-d — dedicated developer' },
     { type: 'cmd', text: 'cat interests.txt' },
-    { type: 'info', text: 'being obbessed' },
+    { type: 'info', text: 'being obssessed' },
     { type: 'cmd', text: 'cat stack.txt' },
     { type: 'success', text: '> TypeScript  React  Java  Go  C++' },
     { type: 'cmd', text: 'echo $QUOTE' },
@@ -33,7 +33,7 @@ const CONFIG = {
   //   nameFadeDuration:  seconds for the name fade-in
   //   roleTypingSpeed:   ms per character for the role line
   introName: 'GlowOnyx-d',
-  introRole: 'dedicated developer — open-source && challenging problems',
+  introRole: 'dedicated developer — being obessed',
   nameFadeDuration: 0.9,   // seconds
   roleTypingSpeed: 60,    // ms per character
 
