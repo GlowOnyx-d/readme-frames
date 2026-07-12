@@ -80,7 +80,7 @@ async function main() {
   const config = loadConfig();
   const cfg = config.commitChart || {};
   const months = cfg.months || 12;
-  const user = cfg.username || config.username || 'bulkinglb';
+  const user = cfg.username || config.username || 'GlowOnyx-d';
 
   // build the last `months` calendar months as buckets (UTC for determinism)
   const now = new Date();

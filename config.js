@@ -18,9 +18,9 @@ const CONFIG = {
   //   info    → blue
   lines: [
     { type: 'cmd', text: 'whoami' },
-    { type: 'out', text: 'GlowOnyx-d — dedicated developer' },
+    { type: 'out', text: 'GlowOnyx-d — Obsessed' },
     { type: 'cmd', text: 'cat interests.txt' },
-    { type: 'info', text: 'being obsessed' },
+    { type: 'info', text: 'with Obsession' },
     { type: 'cmd', text: 'cat stack.txt' },
     { type: 'success', text: '> TypeScript  React  Java  Go  C++' },
     { type: 'cmd', text: 'echo $QUOTE' },
@@ -33,7 +33,7 @@ const CONFIG = {
   //   nameFadeDuration:  seconds for the name fade-in
   //   roleTypingSpeed:   ms per character for the role line
   introName: 'GlowOnyx-d',
-  introRole: 'dedicated developer — being obsessed',
+  introRole: 'Obsessed — with Obsession ',
   nameFadeDuration: 0.9,   // seconds
   roleTypingSpeed: 60,    // ms per character
 
